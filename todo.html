@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Todo</title>
+<style>
+  :root{
+    --bg:#f4f5f7;
+    --card:#ffffff;
+    --text:#1a1d29;
+    --muted:#6b7280;
+    --line:#e6e8ec;
+    --accent:#4f46e5;
+    --accent-2:#7c3aed;
+    --accent-soft:rgba(79,70,229,.10);
+    --danger:#ef4444;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 12px 32px -12px rgba(16,24,40,.16);
+    --radius:18px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0e1017;
+      --card:#171a23;
+      --text:#e7e9f0;
+      --muted:#9aa0b4;
+      --line:#262a38;
+      --accent:#818cf8;
+      --accent-2:#a78bfa;
+      --accent-soft:rgba(129,140,248,.14);
+      --danger:#f87171;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 16px 40px -16px rgba(0,0,0,.6);
+    }
+  }
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 100% -10%, var(--accent-soft), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    display:flex;align-items:flex-start;justify-content:center;
+    min-height:100vh;padding:48px 16px;line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{width:100%;max-width:520px}
+
+  /* header */
+  header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+  .brand h1{font-size:28px;font-weight:700;letter-spacing:-.02em}
+  .brand p{color:var(--muted);font-size:14px;margin-top:2px}
+  .progress{width:120px}
+  .progress .label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px}
+  .track{height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+  .fill{height:100%;width:0;border-radius:99px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    transition:width .45s cubic-bezier(.4,0,.2,1)}
+
+  /* card */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px}
+
+  /* add form */
+  form{display:flex;gap:10px;margin-bottom:16px}
+  input[type=text]{
+    flex:1;padding:14px 16px;font-size:15px;color:var(--text);
+    background:var(--bg);border:1px solid var(--line);border-radius:12px;
+    outline:none;transition:border-color .15s,box-shadow .15s}
+  input[type=text]::placeholder{color:var(--muted)}
+  input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .add{
+    width:48px;flex:none;border:none;cursor:pointer;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+    font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;
+    transition:transform .12s,filter .2s}
+  .add:hover{filter:brightness(1.06)}
+  .add:active{transform:scale(.94)}
+
+  /* filters */
+  .filters{display:flex;gap:8px;margin-bottom:14px}
+  .filters button{
+    flex:1;padding:9px 0;font-size:13px;font-weight:600;cursor:pointer;
+    color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:10px;
+    transition:all .15s}
+  .filters button:hover{color:var(--text);border-color:var(--muted)}
+  .filters button.active{color:#fff;background:var(--accent);border-color:var(--accent)}
+
+  /* list */
+  ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+  li{
+    display:flex;align-items:center;gap:12px;padding:12px 14px;
+    background:var(--bg);border:1px solid var(--line);border-radius:12px;
+    transition:transform .2s,opacity .2s,background .2s,border-color .2s}
+  li:hover{border-color:var(--muted)}
+  li.enter{animation:in .3s cubic-bezier(.4,0,.2,1)}
+  li.out{opacity:0;transform:translateX(24px)}
+  @keyframes in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+
+  /* checkbox */
+  .check{position:relative;flex:none;width:24px;height:24px;cursor:pointer}
+  .check input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .box{width:24px;height:24px;border:2px solid var(--line);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;transition:all .18s}
+  .box svg{width:14px;height:14px;stroke:#fff;stroke-width:3;fill:none;
+    opacity:0;transform:scale(.5);transition:all .18s}
+  .check input:checked ~ .box{background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    border-color:transparent}
+  .check input:checked ~ .box svg{opacity:1;transform:scale(1)}
+  .check input:focus-visible ~ .box{box-shadow:0 0 0 3px var(--accent-soft)}
+
+  .text{flex:1;font-size:15px;word-break:break-word;transition:color .2s}
+  li.done .text{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted)}
+
+  .del{
+    flex:none;width:32px;height:32px;border:none;background:transparent;cursor:pointer;
+    border-radius:8px;color:var(--muted);display:flex;align-items:center;justify-content:center;
+    opacity:0;transform:translateX(4px);transition:all .15s}
+  li:hover .del{opacity:1;transform:none}
+  .del:hover{background:rgba(239,68,68,.12);color:var(--danger)}
+  .del svg{width:17px;height:17px;stroke:currentColor;stroke-width:2;fill:none}
+  @media (hover:none){.del{opacity:1;transform:none}}
+
+  /* empty state */
+  .empty{text-align:center;padding:34px 12px;color:var(--muted)}
+  .empty .ico{font-size:34px;margin-bottom:8px;opacity:.7}
+  .empty p{font-size:14px}
+
+  /* footer */
+  footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;
+    padding:0 4px;font-size:13px;color:var(--muted)}
+  .clear{border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;
+    cursor:pointer;padding:6px 8px;border-radius:8px;transition:all .15s}
+  .clear:hover{color:var(--danger);background:rgba(239,68,68,.08)}
+  .clear[disabled]{opacity:.4;cursor:default}
+  .count span{color:var(--text);font-weight:700}
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <h1>Todo</h1>
+        <p id="date"></p>
+      </div>
+      <div class="progress">
+        <div class="label"><span>Progress</span><span id="pct">0%</span></div>
+        <div class="track"><div class="fill" id="fill"></div></div>
+      </div>
+    </header>
+
+    <div class="card">
+      <form id="form" autocomplete="off">
+        <input id="input" type="text" placeholder="Add a new task…" aria-label="New task" maxlength="200" />
+        <button class="add" type="submit" aria-label="Add task">+</button>
+      </form>
+
+      <div class="filters" role="tablist">
+        <button data-filter="all" class="active">All</button>
+        <button data-filter="active">Active</button>
+        <button data-filter="completed">Completed</button>
+      </div>
+
+      <ul id="list"></ul>
+      <div class="empty" id="empty" hidden>
+        <div class="ico">✓</div>
+        <p>Nothing here. Add a task to get started.</p>
+      </div>
+
+      <footer>
+        <div class="count"><span id="count">0</span> tasks left</div>
+        <button class="clear" id="clear">Clear completed</button>
+      </footer>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const KEY='todos.v1', FKEY='todos.filter';
+  const $=s=>document.querySelector(s);
+  let todos = load();
+  let filter = localStorage.getItem(FKEY) || 'all';
+
+  function load(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || []; }
+    catch(e){ return []; }
+  }
+  function save(){ localStorage.setItem(KEY, JSON.stringify(todos)); }
+
+  // date line
+  $('#date').textContent = new Date().toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+
+  // add
+  $('#form').addEventListener('submit', e=>{
+    e.preventDefault();
+    const t=$('#input').value.trim();
+    if(!t) return;
+    const id=Date.now();
+    todos.push({id, text:t, done:false});
+    save();
+    $('#input').value='';
+    render(id); // animate the new one in
+  });
+
+  // filters
+  document.querySelectorAll('.filters button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      filter=b.dataset.filter;
+      localStorage.setItem(FKEY,filter);
+      document.querySelectorAll('.filters button').forEach(x=>x.classList.toggle('active',x===b));
+      render();
+    });
+  });
+  // restore active filter chip
+  document.querySelector(`.filters button[data-filter="${filter}"]`).classList.add('active');
+
+  // clear completed
+  $('#clear').addEventListener('click',()=>{
+    const ids=todos.filter(t=>t.done).map(t=>t.id);
+    if(!ids.length) return;
+    animateOut(ids, ()=>{ todos=todos.filter(t=>!t.done); save(); render(); });
+  });
+
+  function animateOut(ids, done){
+    const lis=ids.map(id=>document.querySelector(`li[data-id="${id}"]`)).filter(Boolean);
+    if(!lis.length){ done(); return; }
+    lis.forEach(li=>li.classList.add('out'));
+    setTimeout(()=>{ lis.forEach(li=>li.remove()); done(); }, 220);
+  }
+
+  function render(newId){
+    const list=$('#list');
+    list.innerHTML='';
+    const view=todos.filter(t=> filter==='all' ? true : filter==='active' ? !t.done : t.done);
+
+    view.forEach(t=>{
+      const li=document.createElement('li');
+      li.dataset.id=t.id;
+      if(t.done) li.classList.add('done');
+      if(t.id===newId) li.classList.add('enter');
+
+      // checkbox
+      const lab=document.createElement('label'); lab.className='check';
+      const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=t.done;
+      cb.setAttribute('aria-label','Mark task done');
+      cb.addEventListener('change',()=>{ t.done=cb.checked; save(); render(); });
+      const box=document.createElement('span'); box.className='box';
+      box.innerHTML='<svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg>';
+      lab.append(cb,box);
+
+      // text
+      const tx=document.createElement('span'); tx.className='text'; tx.textContent=t.text;
+      tx.addEventListener('dblclick',()=>{ edit(li, t); });
+      tx.title='Double-click to edit';
+
+      // delete
+      const del=document.createElement('button'); del.className='del';
+      del.setAttribute('aria-label','Delete task');
+      del.innerHTML='<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+      del.addEventListener('click',()=>{
+        li.classList.add('out');
+        setTimeout(()=>{ todos=todos.filter(x=>x.id!==t.id); save(); render(); },200);
+      });
+
+      li.append(lab,tx,del);
+      list.appendChild(li);
+    });
+
+    // empty state
+    $('#empty').hidden = view.length>0;
+
+    // progress + count
+    const total=todos.length, done=todos.filter(t=>t.done).length;
+    const pct= total? Math.round(done/total*100):0;
+    $('#pct').textContent=pct+'%';
+    $('#fill').style.width=pct+'%';
+    $('#count').textContent = total-done;
+    $('#clear').disabled = done===0;
+
+    // filter chips active state sync
+    document.querySelectorAll('.filters button').forEach(x=>x.classList.toggle('active',x.dataset.filter===filter));
+  }
+
+  function edit(li, t){
+    const tx=li.querySelector('.text');
+    const inp=document.createElement('input');
+    inp.type='text'; inp.value=t.text; inp.maxLength=200;
+    inp.style.cssText='flex:1;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--accent);border-radius:8px;padding:4px 8px;outline:none';
+    tx.replaceWith(inp); inp.focus(); inp.select();
+    const commit=()=>{ t.text=inp.value.trim()||t.text; save(); render(); };
+    inp.addEventListener('blur',commit);
+    inp.addEventListener('keydown',e=>{ if(e.key==='Enter') inp.blur(); if(e.key==='Escape'){inp.value=t.text; inp.blur();} });
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
